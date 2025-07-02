@@ -1,0 +1,92 @@
+name: Go Build
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build and Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.24.3'
+        cache: true
+
+    - name: Github SHA
+      id: get_sha
+      run: echo "SHA=$(echo ${GITHUB_SHA::7})" >> $GITHUB_OUTPUT
+
+    - name: Build All Architectures
+      run: |
+        go env -w GOOS=linux GOARCH=amd64
+        go build -o main-linux-amd64 main.go
+
+        go env -w GOOS=windows GOARCH=amd64
+        go build -o main-windows-amd64.exe main.go
+
+        go env -w GOOS=darwin GOARCH=amd64
+        go build -o main-darwin-amd64 main.go
+
+        go env -w GOOS=linux GOARCH=arm64
+        go build -o main-linux-arm64 main.go
+
+    - name: Create Release
+      id: create_release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: "build-${{ github.run_number }}-${{ steps.get_sha.outputs.SHA }}"
+        name: "Gemini To QQ (${{ steps.get_sha.outputs.SHA }})"
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Upload Linux Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./main-linux-amd64
+        asset_name: main-linux-amd64
+        asset_content_type: application/octet-stream
+
+    - name: Upload Windows Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./main-windows-amd64.exe
+        asset_name: main-windows-amd64.exe
+        asset_content_type: application/octet-stream
+
+    - name: Upload macOS Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./main-darwin-amd64
+        asset_name: main-darwin-amd64
+        asset_content_type: application/octet-stream
+
+    - name: Upload LinuxARM Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./main-linux-arm64
+        asset_name: main-linux-arm64
+        asset_content_type: application/octet-stream
