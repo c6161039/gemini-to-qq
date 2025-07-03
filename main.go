@@ -83,11 +83,11 @@ func ensureConfigIni() (*ini.File, error) {
 	const defaultConfig = `
 [http]
 url = http://127.0.0.1:3000
-urlToken = aaasssxxx
+urlToken = token
 
 [websocket]
 wsURL = ws://127.0.0.1:3001/
-wsToken = aaasssxxx
+wsToken = token
 
 [gemini]
 apiKey = gemini_api_here
